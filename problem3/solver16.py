@@ -8,9 +8,16 @@ import math
 # initial_state = [[[5,1,2,3],[0,9,6,4],[13,10,7,11],[14,15,12,8]],[], 0, 0] # 8 steps -- Working
 # initial_state = [[[5,1,2,3],[13,9,6,4],[0,10,7,11],[14,15,12,8]],[], 0, 0] # 9 steps -- Working
 # initial_state = [[[5,1,2,3],[13,9,6,4],[10,0,7,11],[14,15,12,8]],[], 0, 0] # 10 steps -- Working
-initial_state = [[[5,1,2,3],[13,9,6,4],[10,15,7,11],[14,0,12,8]],[], 0, 0] # 11 steps -- Working
-# initial_state = [[[5,1,2,3],[13,9,6,4],[10,15,7,11],[0,14,12,8]],[], 0, 0]
+# initial_state = [[[5,1,2,3],[13,9,6,4],[10,15,7,11],[14,0,12,8]],[], 0, 0] # 11 steps -- Working
+# initial_state = [[[5,1,2,3],[13,9,6,4],[10,15,7,11],[14,12,0,8]],[], 0, 0] # 12 steps -- Working
+# initial_state = [[[5,1,2,3],[13,9,6,4],[10,15,0,11],[14,12,7,8]],[], 0, 0] # 13 steps -- Working
+# initial_state = [[[5,1,2,3],[13,9,6,4],[10,0,15,11],[14,12,7,8]],[], 0, 0] # 14 steps -- Working
+# initial_state = [[[5,1,2,3],[13,0,6,4],[10,9,15,11],[14,12,7,8]],[], 0, 0] # 15 steps -- Working
+# initial_state = [[[5,1,2,3],[13,6,0,4],[10,9,15,11],[14,12,7,8]],[], 0, 0] # 16 steps -- Working - takes time
+initial_state = [[[5,1,0,3],[13,6,2,4],[10,9,15,11],[14,12,7,8]],[], 0, 0]
+# initial_state = [[[5,1,2,3],[13,9,6,4],[10,15,0,11],[14,12,7,8]],[], 0, 0]
 # initial_state = [[[5,2,3,1],[13,9,6,4],[10,15,7,11],[14,12,0,8]],[], 0, 0] # 11+ steps -- Not Working
+
 # initial_state = [[[2, 1, 3, 4], [5, 6, 7, 8], [9, 10, 0, 12], [13, 14, 11, 15]], [], 0, 0]  # not working apprx 9 steps
 # initial_state = [[[2, 1, 3, 4], [5, 6, 7, 8], [9, 10, 0, 12], [13, 14, 11, 15]], [], 0, 0]
 # initial_state = [[[1,2,7,3],[5,10,6,4],[9,11,15,8],[13,14,0,12]],[], 0, 0]
@@ -19,14 +26,42 @@ goal_state = [[[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 0]], []
 # fringe = [initial_state]
 # currentState = [[[1,2,3,4],[5,6,7,8],[9,10,0,12],[13,14,15,11]],[], 0, 9]
 goalStatePositions = {}
-lc = {}
+# lc = {}
 
+# check of valid rows and col are provided
+def CheckIfValidRowsAndColumn(puzzleboard):
+    row = len(puzzleboard)
+    if row != 4:
+        return False
+    for row in puzzleboard:
+        col = len(row)
+        if col != 4:
+            return False
+
+# check if valid tiles are present in puzzle
+def CheckTilesInPuzzle(puzzleboard):
+    puzzle_flat_list = [item for element in puzzleboard for item in element]
+    status = all(item >= 0 or item < 16 for item in puzzle_flat_list)
+    return status
+
+# check duplicate tiles in board
+def CheckDuplicateTiles(puzzleboard):
+    puzzle_flat_list = [item for element in puzzleboard for item in element]
+    return len(puzzle_flat_list) == len(set(puzzle_flat_list))
+
+# check if valid input is provided
+def IsInputValid(intial_state):
+   return CheckIfValidRowsAndColumn(initial_state[0]) and \
+            CheckTilesInPuzzle(initial_state[0]) and \
+            CheckDuplicateTiles(initial_state[0])
+
+# creates a dictionary for evry goal state tile position
 def CreateGoalStatePositionsDictionary(goal):
     for i, row in enumerate(goal):
         for j, col in enumerate(row):
             goalStatePositions[goal[i][j]] = [i, j]
 
-
+# generate parity for a particular state
 def GenerateParity(state):
     parityInversion = 0
     i = 0
@@ -41,17 +76,15 @@ def GenerateParity(state):
     return parityInversion
     # parityInversion = parityInversion + 1 for i in range(0, len(flat_list)) for j in range(i+1, len(flat_list)) if flat_list[j]<flat_list[i]
 
-
+# check if parity inversion is satisfied
 def IsParityInversionSatisfied(currentstate, goal_state):
     goalParity = GenerateParity(goal_state)
     stateparity = GenerateParity(currentstate)
     return (goalParity % 2) == (stateparity % 2)
 
-
-#  returns a position of blank tile in the given puzzle
+# returns a position of blank tile in the given puzzle
 def FindPositionOfBlankTile(puzzle):
     return [(row, col) for row in range(0, 4) for col in range(0, 4) if puzzle[row][col] == 0]
-
 
 # returns the manhattan distance for the puzzle state
 def ManhattanDistance(puzzle):
@@ -64,12 +97,7 @@ def ManhattanDistance(puzzle):
                 goalStatePositions[col][1] - j)
     return manhattanDistance
 
-
-
-
-# goalStatePositions1 = {3: [1, 0], 4: [1, 1], 5: [1, 2], 0: [2,2]}
-# goalStatePositions1 = {3: [0, 0], 4: [1, 0], 5: [2, 0]}
-
+# returns number of conflicts in a particular row for a particular tile
 def conflictsInRow(state, tile, tilerownumber, tilecolnumber):
     conflicts = 0
     row = state[tilerownumber]
@@ -79,11 +107,13 @@ def conflictsInRow(state, tile, tilerownumber, tilecolnumber):
         tk = row[k]
         if tj != 0 and tk != 0:
             if goalStatePositions[tj][0] == goalStatePositions[tk][0]: # check if the 2 tiles are in same row in goal position
-                if (tilecolnumber > k and goalStatePositions[tj][1] < goalStatePositions[tk][1]) or (tilecolnumber < k and goalStatePositions[tj][1] > goalStatePositions[tk][1]):
+                if (tilecolnumber > k and goalStatePositions[tj][1] < goalStatePositions[tk][1]) \
+                        or (tilecolnumber < k and goalStatePositions[tj][1] > goalStatePositions[tk][1]):
                     conflicts += 1
                     conflictedTilesInRow.append(tk)
     return conflicts, conflictedTilesInRow
 
+# returns number of conflicts in a particular column for a particular tile
 def conflictsInColumn(state, tile, tilerownumber, tilecolnumber):
     conflicts = 0
     conflictedTilesInColumn = []
@@ -93,12 +123,14 @@ def conflictsInColumn(state, tile, tilerownumber, tilecolnumber):
         tk = column[k]
         if tj != 0 and tk != 0:
             if goalStatePositions[tj][1] == goalStatePositions[tk][1]: # check if the 2 tiles are in same column in goal position
-                if (tilerownumber > k and goalStatePositions[tj][0] < goalStatePositions[tk][0]) or (tilerownumber < k and goalStatePositions[tj][0] > goalStatePositions[tk][0]):
+                if (tilerownumber > k and goalStatePositions[tj][0] < goalStatePositions[tk][0]) \
+                        or (tilerownumber < k and goalStatePositions[tj][0] > goalStatePositions[tk][0]):
                     conflicts += 1
                     conflictedTilesInColumn.append(tk)
     return conflicts, conflictedTilesInColumn
 
-def linearConflict(state):
+# returns linear conflict for a particular state
+def linearConflict(state, lc):
     for i, row in enumerate(state):
         lc[("row", i)] = 0
         rConflicts = {}
@@ -129,8 +161,9 @@ def linearConflict(state):
 
 # return heuristic value MD/3 plus linear conflicts
 def heuristicValue(state):
+    lc = {}
     MD = int(math.ceil(float(ManhattanDistance(state)) / 3))
-    LC = (2 * linearConflict(state))
+    LC = (2 * linearConflict((state), lc))
     heuristic = MD + LC
     return heuristic
 
@@ -160,7 +193,6 @@ def MoveTileUp(puzzle, blankPosition, movesUntilNow, cost, succ):
         movesUntilNowCopy.append('U' + str(i) + str(y + 1))
         succ.append([copy.deepcopy(puzzleCopy), movesUntilNowCopy, cost + 1, cost + heuristicValue(puzzleCopy)])
 
-
 # returns a list of possible combinations for moving the tile down with list of move
 def MoveTileDown(puzzle, blankPosition, movesUntilNow, cost, succ):
     puzzleCopy = copy.deepcopy(puzzle)
@@ -173,7 +205,6 @@ def MoveTileDown(puzzle, blankPosition, movesUntilNow, cost, succ):
         puzzleCopy[index][y], puzzleCopy[index + 1][y] = puzzleCopy[index + 1][y], puzzleCopy[index][y]
         movesUntilNowCopy.append('D' + str(i) + str(y + 1))
         succ.append([copy.deepcopy(puzzleCopy), movesUntilNowCopy, cost + 1, cost + heuristicValue(puzzleCopy)])
-
 
 # return returns a list of possible combinations for moving the tile down with list of move
 def MoveTileRight(puzzle, blankPosition, movesUntilNow, cost, succ):
@@ -188,7 +219,6 @@ def MoveTileRight(puzzle, blankPosition, movesUntilNow, cost, succ):
         movesUntilNowCopy.append('R' + str(i) + str(x + 1))
         succ.append([copy.deepcopy(puzzleCopy), movesUntilNowCopy, cost + 1, cost + heuristicValue(puzzleCopy)])
 
-
 # returns a list of possible combinations for moving the tile Up with list of move
 def MoveTileLeft(puzzle, blankPosition, movesUntilNow, cost, succ):
     puzzleCopy = copy.deepcopy(puzzle)
@@ -202,7 +232,6 @@ def MoveTileLeft(puzzle, blankPosition, movesUntilNow, cost, succ):
         movesUntilNowCopy.append('L' + str(i) + str(x + 1))
         succ.append([copy.deepcopy(puzzleCopy), movesUntilNowCopy, cost + 1, cost + heuristicValue(puzzleCopy)])
 
-
 # returns a list of successors, which individually contains two list.
 def successor(currentState):
     succ = []
@@ -212,7 +241,6 @@ def successor(currentState):
     MoveTileRight(currentState[0], blankPosition, currentState[1], currentState[2], succ)
     MoveTileLeft(currentState[0], blankPosition, currentState[1], currentState[2], succ)
     return succ
-
 
 # returns true if current state is present in the fringe and also removes the larger cost state
 def IsStateWithLargerTotalCostInFringe(current, fringe):
@@ -224,10 +252,14 @@ def IsStateWithLargerTotalCostInFringe(current, fringe):
                 fringe.remove(item)
                 return True
 
+# check if a board configuration is present in fringe
+def IsStateInClosed(current, fringe):
+    for item in fringe:
+        if item[0] == current[0]:
+            return True
 
-# Solve using A* algorithm 3
+# solve using A* algorithm 3
 def solve(initial_state):
-    # if IsParityInversionSatisfied(initial_state[0], goal_state[0]):
     if initial_state[0] == goal_state[0]:
         return initial_state
     fringe = [initial_state]
@@ -235,16 +267,15 @@ def solve(initial_state):
     while len(fringe) > 0:
         fringe = sorted(fringe, key=itemgetter(3))
         popped_fringe = fringe.pop(0)
-        closed.append(popped_fringe)
+        closed.append(popped_fringe[0])
         if popped_fringe[0] == goal_state[0]:
             return popped_fringe
         else:
             for s in successor(popped_fringe):
-                if s in closed:
+                if IsStateInClosed(s, fringe):
                     continue
-                if s in fringe:
                     # find if s is in fringe with larger value of f(s)
-                    if (IsStateWithLargerTotalCostInFringe(s, fringe)):
+                if (IsStateWithLargerTotalCostInFringe(s, fringe)):
                         fringe.append(s)
                 else:
                     fringe.append(s)
@@ -266,12 +297,12 @@ if  solution == False:
 else:
     print "solution reached in {0} steps".format(solution[2])
     print "solution reached in {0} moves".format(solution[1])
-#
+
 # print "Conflicts in row are: {0}".format(conflictsInRow([[5, 4, 3]], 3, 0, 2))
 # print "Linear conflict in row are : {0}".format(linearConflict([[5, 0, 3]]))
 # print "Conflicts in column are: {0}".format(conflictsInColumn([[5],[4], [3]], 5, 0, 0))
 # print "Linear conflict in row are : {0}".format(linearConflict([[5],[4],[3]]))
-# print "Heuristic value for state : {0}".format(heuristicValue([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 0]]))
+# print "Heuristic value for state : {0}".format(heuristicValue([[5,2,3,1], [13,9,6,4], [10,15,7,11], [14,0,12,8]]))
 # print "Linear conflict for state is : {0}".format(linearConflict([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 0, 15, 14]]))
 # print "heuristic for state is : {0}".format(heuristicValue([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 0, 15, 14]]))
 # # print "dictionary is {0}".format(goalStatePositions)
