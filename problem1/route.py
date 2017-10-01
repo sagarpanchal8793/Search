@@ -1,4 +1,55 @@
 #!/usr/bin/env python
+# route.py : Solve Navigation problem!
+# Ameya Angal, Angad Dhillon, Sagar Panchal
+
+# Analysis:
+# Abstraction:
+#   State : State is a list with following elements:
+#             index 0: SourceCityName
+#             index 1: List that contains Path taken to reach the the city mentioned in the 0th index
+#             index 2: Distance travelled to reach city/junction in context
+#             index 3: Time required to reach city/junction in context
+#             index 4: Segments (turns) required to reach city/junction in context
+#             index 5: List containing highways taken to reach city/junction in context
+#             index 6: cost c(s) function (distance, time, segments)to reach city/junction in context
+#             index 7: f(s) = c(s)+h(s),for a city/junction in context (This is present only for A* search)
+#   Goal: Goal city as string.
+#   Initial State: State with default values for index 1-7 and source city at index 0
+#   cost function:
+#       a) Distance: Added previous travelled distance with the distance between two connected cities from road-segments.txt
+#       b) Time: Added previous time required with the distance between two connected cities, time = distance/speed (info given in road-segments.txt)
+#       c) Segments: Added 1 to previous travelled segments. Segment is when path is changed.
+#   Heuristic: calculated distance between source city and goal city using latitude and longitude information in the city-gps
+#         Distance is calculated using Haversine formula. For the cites/junctions that don't have latitude and longitude, we have returned
+#         0, as with this case the total heuristic will be weak but will never overestimate. This heuristic is not consistent.
+#   Successor: List of states for cities that are connected to the city whose successor needs to be found.
+#
+#   Assumption: 1) We have ignored the road-segments which has zero/blank distance
+#
+#
+# 1) AStar search is working best for each routing options. As number of states expanded by Astar is always less than BFS, DFS and Uniform Cost
+#   for every case.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # put your routing program here
 from operator import itemgetter
 from math import sin, cos, sqrt, atan2, radians
@@ -58,7 +109,7 @@ def distance(sourcelatitude, sourcelongitude, destinatiolatitude, destinationlon
     c = 2 * atan2(sqrt(altitude), sqrt(abs(1 - altitude)))
     return r * c
 
-# returns the heuristic value for a city
+# returns the heuristic value for a city, 0 if unknown latitude and longitudes
 def Heuristicvalue(sourceCity):
     if goal_city in city_gps:
         destinationCityLatitude = radians(city_gps[goal_city][0])
@@ -74,7 +125,7 @@ def Heuristicvalue(sourceCity):
 
     return distance(sourceCityLatitude, sourceCityLongitude, destinationCityLatitude, destinationCityLongitude)
 
-# returns successors for uniform cost search for a particular state
+# returns successors for uniform cost search/ bfs/ dfs for a particular state
 def successor(s, cost = " "):
     city_name = s[0]
     # State = [connectedCityName, [Path till that connected city], total distance, total time, totalsegments, highwaynames, c(s)]
@@ -98,7 +149,7 @@ def successor(s, cost = " "):
                  s[5] + [values[3]]] \
                 for values in road_segments[city_name]]
 
-# returns successors for uniform cost search for a particular state
+# returns successors for astar search for a particular state
 def AStarsuccessor(s, cost = " "):
     city_name = s[0]
     # State = [connectedCityName, [Path till that connected city], total distance, total time, totalsegments, highwaynames, c(s), f(s)]
@@ -107,7 +158,7 @@ def AStarsuccessor(s, cost = " "):
         return [[values[0], s[1] + [city_name], s[2] + values[1], s[3] + float(values[1]) / float(values[2]), s[4] + 1,
                     s[5] + [values[3]], s[2] + values[1], s[2]+values[1]+ Heuristicvalue(values[0])] \
                 for values in road_segments[city_name]]
-    # For time f(s) is time (till this state) + heuristicvalue(currentcity) / 65 (divided by maximum poossible speed in route segments)
+    # For time f(s) is time (till this state) + heuristicvalue(currentcity) / 150 (divided by maximum poossible speed)
     elif cost == "time":
         return [[values[0], s[1] + [city_name], s[2] + values[1], s[3] + float(values[1]) / float(values[2]), s[4] + 1,
                     s[5] + [values[3]], s[3] + float(values[1])/float(values[2]), s[3] + float(values[1])/float(values[2]) + Heuristicvalue(values[0])/150.0] \
@@ -152,7 +203,7 @@ def SolveDFS(initial_state, cost = ""):
 # solve using uniform cost search algorithm
 def UniformCostSearch(initial_state, cost):
     statecount = 0
-    print "UCS"
+    # print "UCS"
     if initial_state[0] == goal_city:
         return initial_state
     fringe=[initial_state]
@@ -160,7 +211,7 @@ def UniformCostSearch(initial_state, cost):
         fringe = sorted(fringe, key=itemgetter(6)) # Sort on c(s)
         popped_fringe=fringe.pop(0)
         if popped_fringe[0] == goal_city:
-            print statecount
+            # print statecount
             return(popped_fringe)
         if popped_fringe[0] not in visited_states:
             statecount += 1
@@ -169,7 +220,7 @@ def UniformCostSearch(initial_state, cost):
                 fringe.append(s)
     return False
 
-# referred question @151 on Piazza and removed a higher heuristic state (higher cost) present in closed, as my heuristic function is not consistent
+# referred question @151 on Piazza and removed a state (higher cost) present in closed, as my heuristic function is not consistent
 # removes a state from closed list if current state has a lower f(s) value (as)
 def removeStateIfInClosedWithHigherHeuristic(state, closed):
     for item in closed:
@@ -186,7 +237,7 @@ def IsStateInClosed(state, closed):
 # solve using a star algorithm
 def solve_astar(initial_state, cost):
     statecount = 0
-    print "Astar"
+    # print "Astar"
     if initial_state[0] == goal_city:
         return initial_state
     fringe = [initial_state]
@@ -195,7 +246,7 @@ def solve_astar(initial_state, cost):
         fringe = sorted(fringe, key=itemgetter(7)) # Sort on f(s)
         popped_fringe = fringe.pop(0)
         if popped_fringe[0] == goal_city:
-            print statecount
+            # print statecount
             return popped_fringe
         # if popped in closed, continue else closed append and expand
         if not IsStateInClosed(popped_fringe, closed):
@@ -220,6 +271,7 @@ def printRoute(solution):
             print "From {0} to {1} via highway {2} for {3} miles ".format(solution[1][i], solution[1][i+1], connectedhighway, dist)
         print "{0} {1} {2} {3}".format(solution[2], solution[3], " ".join([str(x) for x in solution[1]]), goal_city)
 
+
 def IsCityValid(cityname):
     return cityname in road_segments
 
@@ -227,8 +279,10 @@ def IsCityValid(cityname):
 def IsCostFunctionValid(routing_algorithm):
     return routing_algorithm in ["segments", "distance", "time"]
 
+
 def IsRoutingAlgorithmValid(costfunction):
     return costfunction in ["bfs","uniform","dfs","astar"]
+
 
 def IsInputvalid():
     if not IsCityValid(goal_city) or not IsCityValid(start_city):
@@ -240,8 +294,8 @@ def IsInputvalid():
     if not IsCostFunctionValid(costfunction):
         print "Invalid cost function"
         return False
-    if routing_algorithm == "uniform" or routing_algorithm == "astar":
-        global costfunction
+    # if routing_algorithm == "uniform" or routing_algorithm == "astar":
+        # global costfunction
         # costfunction = sys.argv[4]
     return True
 
@@ -262,7 +316,7 @@ if IsInputvalid():
         solution = SolveDFS(initial_state)
     else:
         solution = solve_astar(initial_state, costfunction)
-    print "segments {0}".format(solution[4])
+    # print "segments {0}".format(solution[4])
     printRoute(solution)
 else:
     print "Invalid Input"
