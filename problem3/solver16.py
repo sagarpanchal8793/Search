@@ -1,35 +1,17 @@
+#!/usr/bin/env python
 # put your 15 puzzle solver here!
 from operator import itemgetter
 import copy
 import math
 import time
 import sys
+
 # State: [[[],[],[],[]], [moves to get to that state], c(s),f(s)]
 initial_state = []
-# initial_state = [[[1,2,7,3],[5,10,6,4],[9,11,15,8],[13,14,0,12]],[], 0, 0] #
-# initial_state = [[[5,1,2,3],[0,9,6,4],[13,10,7,11],[14,15,12,8]],[], 0, 0] # 8 steps -- Working
-# initial_state = [[[5,1,2,3],[13,9,6,4],[0,10,7,11],[14,15,12,8]],[], 0, 0] # 9 steps -- Working
-# initial_state = [[[5,1,2,3],[13,9,6,4],[10,0,7,11],[14,15,12,8]],[], 0, 0] # 10 steps -- Working
-# initial_state = [[[5,1,2,3],[13,9,6,4],[10,15,7,11],[14,0,12,8]],[], 0, 0] # 11 steps -- Working
-# initial_state = [[[5,1,2,3],[13,9,6,4],[10,15,7,11],[14,12,0,8]],[], 0, 0] # 12 steps -- Working
-# initial_state = [[[5,1,2,3],[13,9,6,4],[10,15,0,11],[14,12,7,8]],[], 0, 0] # 13 steps -- Working
-# initial_state = [[[5,1,2,3],[13,9,6,4],[10,0,15,11],[14,12,7,8]],[], 0, 0] # 14 steps -- Working
-# initial_state = [[[5,1,2,3],[13,0,6,4],[10,9,15,11],[14,12,7,8]],[], 0, 0] # 15 steps -- Working
-# initial_state = [[[5,1,2,3],[13,6,0,4],[10,9,15,11],[14,12,7,8]],[], 0, 0] # 16 steps -- Working - takes time
-# initial_state = [[[5,1,0,3],[13,9,2,6],[10,15,11,4],[14,12,7,8]],[], 0, 0]
-# initial_state = [[[5,1,2,3],[6,10,8,4],[9,14,0,7],[13,15,12,11]],[], 0, 0]
-# initial_state = [[[5,1,2,3],[13,9,6,0],[10,15,11,4],[14,12,7,8]],[], 0, 0]
-# initial_state = [[[5,2,3,1],[13,9,6,4],[10,15,7,11],[14,12,0,8]],[], 0, 0] # 11+ steps -- Not Working
-
-# initial_state = [[[2, 1, 3, 4], [5, 6, 7, 8], [9, 10, 0, 12], [13, 14, 11, 15]], [], 0, 0]  # not working apprx 9 steps
-# initial_state = [[[2, 1, 3, 4], [5, 6, 7, 8], [9, 10, 0, 12], [13, 14, 11, 15]], [], 0, 0]
-# initial_state = [[[1,2,7,3],[5,10,6,4],[9,11,15,8],[13,14,0,12]],[], 0, 0]
-# initial_state = [[[1,3,6,4],[5,11,2,8],[0,9,7,12],[13,10,14,15]],[], 0, 0]
+# initial_state = [[[5,1,2,3],[13,6,4,11],[10,9,15,0],[14,12,7,8]],[], 0, 0]
 goal_state = [[[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 0]], []]
 # fringe = [initial_state]
-# currentState = [[[1,2,3,4],[5,6,7,8],[9,10,0,12],[13,14,15,11]],[], 0, 9]
 goalStatePositions = {}
-# lc = {}
 
 # check of valid rows and col are provided
 def CheckIfValidRowsAndColumn(puzzleboard):
@@ -187,8 +169,6 @@ def MoveTileUp(puzzle, blankPosition, movesUntilNow, cost, succ):
         i = i + 1
         puzzleCopy[index][y], puzzleCopy[index - 1][y] = puzzleCopy[index - 1][y], puzzleCopy[index][y]
         movesUntilNowCopy.append('U' + str(i) + str(y + 1))
-        # deepcop = copy.deepcopy(puzzleCopy)
-        # if deepcop not in closed:
         succ.append([copy.deepcopy(puzzleCopy), movesUntilNowCopy, cost + 1, cost + heuristicValue(puzzleCopy)])
 
 
@@ -261,33 +241,15 @@ def solve(initial_state):
     while len(fringe) > 0:
         fringe = sorted(fringe, key=itemgetter(3))
         popped_fringe = fringe.pop(0)
-        closed.append(popped_fringe)
-        if popped_fringe[0] == goal_state[0]:
-            print len(fringe)
-            return popped_fringe
-        else:
+        if not IsStateInClosed(popped_fringe, closed):
+            closed.append(popped_fringe)
+            if popped_fringe[0] == goal_state[0]:
+                return popped_fringe
             for s in successor(popped_fringe):
-                if IsStateInClosed(s, closed):
-                    continue
                 fringe.append(s)
-                # if IsStateInClosed(s, closed):
-                #     continue
-                # fringe.append(s)
-                    # find if s is in fringe with larger value of f(s)
-                # if (IsStateWithLargerTotalCostInFringe(s, fringe)):
-                #         fringe.append(s)
-                # else:
-                #     fringe.append(s)
     return False
 
 
-# print "return IsStateWithLargerTotalCostInFringe is {0}".format(IsStateWithLargerTotalCostInFringe(currentState, fringe))
-# print "fringe is {0}".format(fringe)
-
-# print "successors of initial state are {0}".format(successor(initial_state))
-# print "Length of successors of initial state is {0}".format(len(successor(initial_state)))
-# print "successors of goal state are {0}".format(successor(goal_state))
-# print "Length of successors of goal state is {0}".format(len(successor(goal_state)))
 filename = sys.argv[1]
 with open(filename, 'r') as file:
     initial_board = []
@@ -306,31 +268,11 @@ initial_state.append(0)
 initial_state.append(0)
 
 CreateGoalStatePositionsDictionary(goal_state[0])
-# start = time.time()
 solution = solve(initial_state)
 if  solution == False:
     print "No solution"
 else:
-    # print "solution reached in {0} steps".format(solution[2])
-    # print "solution reached in {0} moves".format(solution[1])
     print " ".join([str(x) for x in solution[1]])
-# endtime = time.time()
-# print "time taken : {0}".format(endtime-start)
-# print "Conflicts in row are: {0}".format(conflictsInRow([[2, 3, 1]], 3, 0, 2))
-# print "Linear conflict in row are : {0}".format(linearConflict([[5, 0, 3]]))
-# print "Conflicts in column are: {0}".format(conflictsInColumn([[5],[4], [3]], 5, 0, 0))
-# print "Linear conflict in row are : {0}".format(linearConflict([[5],[4],[3]]))
-# print "Heuristic value for state : {0}".format(heuristicValue([[5,2,3,1], [13,9,6,4], [10,15,7,11], [14,0,12,8]]))
-# print "Linear conflict for state is : {0}".format(linearConflict([[2, 3, 1, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 0]], {}))
-# print "heuristic for state is : {0}".format(heuristicValue([[2, 3, 1, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 0]]))
-# # print "dictionary is {0}".format(goalStatePositions)
-# print "MD for initial state is {0}".format(ManhattanDistance([[5,1,2,3],[13,9,6,4],[10,15,7,11],[14,0,12,8]]))
-# print "MD tile heuristic for initial state is {0}".format(heuristicValue([[5,1,2,3],[13,9,6,4],[10,0,7,11],[14,15,12,8]]))
-# start = time.time()
-# print "successor time is {0}".format(successor(initial_state))
-# end = time.time()
-# print "time is {0}".format(end - start)
-
 
 
 
