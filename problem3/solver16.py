@@ -2,9 +2,11 @@
 from operator import itemgetter
 import copy
 import math
-
+import time
+import sys
 # State: [[[],[],[],[]], [moves to get to that state], c(s),f(s)]
-
+initial_state = []
+# initial_state = [[[1,2,7,3],[5,10,6,4],[9,11,15,8],[13,14,0,12]],[], 0, 0] #
 # initial_state = [[[5,1,2,3],[0,9,6,4],[13,10,7,11],[14,15,12,8]],[], 0, 0] # 8 steps -- Working
 # initial_state = [[[5,1,2,3],[13,9,6,4],[0,10,7,11],[14,15,12,8]],[], 0, 0] # 9 steps -- Working
 # initial_state = [[[5,1,2,3],[13,9,6,4],[10,0,7,11],[14,15,12,8]],[], 0, 0] # 10 steps -- Working
@@ -14,8 +16,9 @@ import math
 # initial_state = [[[5,1,2,3],[13,9,6,4],[10,0,15,11],[14,12,7,8]],[], 0, 0] # 14 steps -- Working
 # initial_state = [[[5,1,2,3],[13,0,6,4],[10,9,15,11],[14,12,7,8]],[], 0, 0] # 15 steps -- Working
 # initial_state = [[[5,1,2,3],[13,6,0,4],[10,9,15,11],[14,12,7,8]],[], 0, 0] # 16 steps -- Working - takes time
-initial_state = [[[5,1,0,3],[13,6,2,4],[10,9,15,11],[14,12,7,8]],[], 0, 0]
-# initial_state = [[[5,1,2,3],[13,9,6,4],[10,15,0,11],[14,12,7,8]],[], 0, 0]
+# initial_state = [[[5,1,0,3],[13,9,2,6],[10,15,11,4],[14,12,7,8]],[], 0, 0]
+# initial_state = [[[5,1,2,3],[6,10,8,4],[9,14,0,7],[13,15,12,11]],[], 0, 0]
+# initial_state = [[[5,1,2,3],[13,9,6,0],[10,15,11,4],[14,12,7,8]],[], 0, 0]
 # initial_state = [[[5,2,3,1],[13,9,6,4],[10,15,7,11],[14,12,0,8]],[], 0, 0] # 11+ steps -- Not Working
 
 # initial_state = [[[2, 1, 3, 4], [5, 6, 7, 8], [9, 10, 0, 12], [13, 14, 11, 15]], [], 0, 0]  # not working apprx 9 steps
@@ -74,7 +77,6 @@ def GenerateParity(state):
             if flat_list[j] < flat_list[i]:
                 parityInversion = parityInversion + 1
     return parityInversion
-    # parityInversion = parityInversion + 1 for i in range(0, len(flat_list)) for j in range(i+1, len(flat_list)) if flat_list[j]<flat_list[i]
 
 # check if parity inversion is satisfied
 def IsParityInversionSatisfied(currentstate, goal_state):
@@ -93,8 +95,8 @@ def ManhattanDistance(puzzle):
         for j, col in enumerate(row):
             if col == 0:
                 continue
-            manhattanDistance = manhattanDistance + abs(goalStatePositions[col][0] - i) + abs(
-                goalStatePositions[col][1] - j)
+            manhattanDistance = manhattanDistance + abs(goalStatePositions[col][0] - i) \
+                                + abs(goalStatePositions[col][1] - j)
     return manhattanDistance
 
 # returns number of conflicts in a particular row for a particular tile
@@ -167,18 +169,12 @@ def heuristicValue(state):
     heuristic = MD + LC
     return heuristic
 
-# # Gives the ceil value for misplacesTiles/3
-# def heuristicValue(state):
-#     state_flat_list = [item for element in state for item in element]
-#     goal_flat_list = [item for element in goal_state[0] for item in element]
-#     misplacedTiles = 0
-#     for i in range(0, 16):
-#         if state_flat_list[i] == 0:
-#             continue
-#         if state_flat_list[i] != goal_flat_list[i]:
-#             misplacedTiles += 1
-#     heuristic = int(math.ceil(misplacedTiles/3))
-#     return heuristic
+# check if a board configuration is present in fringe
+def IsStateInClosed(current, closed):
+    for item in closed:
+        if item[0] == current[0]:
+            return True
+    return False
 
 # returns a list of possible combinations for moving the tile Up with list of move
 def MoveTileUp(puzzle, blankPosition, movesUntilNow, cost, succ):
@@ -191,7 +187,10 @@ def MoveTileUp(puzzle, blankPosition, movesUntilNow, cost, succ):
         i = i + 1
         puzzleCopy[index][y], puzzleCopy[index - 1][y] = puzzleCopy[index - 1][y], puzzleCopy[index][y]
         movesUntilNowCopy.append('U' + str(i) + str(y + 1))
+        # deepcop = copy.deepcopy(puzzleCopy)
+        # if deepcop not in closed:
         succ.append([copy.deepcopy(puzzleCopy), movesUntilNowCopy, cost + 1, cost + heuristicValue(puzzleCopy)])
+
 
 # returns a list of possible combinations for moving the tile down with list of move
 def MoveTileDown(puzzle, blankPosition, movesUntilNow, cost, succ):
@@ -251,12 +250,7 @@ def IsStateWithLargerTotalCostInFringe(current, fringe):
             if oldCost > newCost:
                 fringe.remove(item)
                 return True
-
-# check if a board configuration is present in fringe
-def IsStateInClosed(current, fringe):
-    for item in fringe:
-        if item[0] == current[0]:
-            return True
+    return False
 
 # solve using A* algorithm 3
 def solve(initial_state):
@@ -267,20 +261,24 @@ def solve(initial_state):
     while len(fringe) > 0:
         fringe = sorted(fringe, key=itemgetter(3))
         popped_fringe = fringe.pop(0)
-        closed.append(popped_fringe[0])
+        closed.append(popped_fringe)
         if popped_fringe[0] == goal_state[0]:
+            print len(fringe)
             return popped_fringe
         else:
             for s in successor(popped_fringe):
-                if IsStateInClosed(s, fringe):
+                if IsStateInClosed(s, closed):
                     continue
+                fringe.append(s)
+                # if IsStateInClosed(s, closed):
+                #     continue
+                # fringe.append(s)
                     # find if s is in fringe with larger value of f(s)
-                if (IsStateWithLargerTotalCostInFringe(s, fringe)):
-                        fringe.append(s)
-                else:
-                    fringe.append(s)
+                # if (IsStateWithLargerTotalCostInFringe(s, fringe)):
+                #         fringe.append(s)
+                # else:
+                #     fringe.append(s)
     return False
-    # return False
 
 
 # print "return IsStateWithLargerTotalCostInFringe is {0}".format(IsStateWithLargerTotalCostInFringe(currentState, fringe))
@@ -290,21 +288,50 @@ def solve(initial_state):
 # print "Length of successors of initial state is {0}".format(len(successor(initial_state)))
 # print "successors of goal state are {0}".format(successor(goal_state))
 # print "Length of successors of goal state is {0}".format(len(successor(goal_state)))
+filename = sys.argv[1]
+with open(filename, 'r') as file:
+    initial_board = []
+    for line in file:
+        row = []
+        for col in line.strip().split(" "):
+            try:
+                row.append(int(col))
+            except ValueError:
+                print "Enter valid number"
+        initial_board.append(row)
+    initial_state.append(initial_board)
+
+initial_state.append([])
+initial_state.append(0)
+initial_state.append(0)
+
 CreateGoalStatePositionsDictionary(goal_state[0])
+# start = time.time()
 solution = solve(initial_state)
 if  solution == False:
     print "No solution"
 else:
-    print "solution reached in {0} steps".format(solution[2])
-    print "solution reached in {0} moves".format(solution[1])
-
-# print "Conflicts in row are: {0}".format(conflictsInRow([[5, 4, 3]], 3, 0, 2))
+    # print "solution reached in {0} steps".format(solution[2])
+    # print "solution reached in {0} moves".format(solution[1])
+    print " ".join([str(x) for x in solution[1]])
+# endtime = time.time()
+# print "time taken : {0}".format(endtime-start)
+# print "Conflicts in row are: {0}".format(conflictsInRow([[2, 3, 1]], 3, 0, 2))
 # print "Linear conflict in row are : {0}".format(linearConflict([[5, 0, 3]]))
 # print "Conflicts in column are: {0}".format(conflictsInColumn([[5],[4], [3]], 5, 0, 0))
 # print "Linear conflict in row are : {0}".format(linearConflict([[5],[4],[3]]))
 # print "Heuristic value for state : {0}".format(heuristicValue([[5,2,3,1], [13,9,6,4], [10,15,7,11], [14,0,12,8]]))
-# print "Linear conflict for state is : {0}".format(linearConflict([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 0, 15, 14]]))
-# print "heuristic for state is : {0}".format(heuristicValue([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 0, 15, 14]]))
+# print "Linear conflict for state is : {0}".format(linearConflict([[2, 3, 1, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 0]], {}))
+# print "heuristic for state is : {0}".format(heuristicValue([[2, 3, 1, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 0]]))
 # # print "dictionary is {0}".format(goalStatePositions)
-# print "MD for initial state is {0}".format(ManhattanDistance([[1,3,6,4],[5,11,2,8],[0,9,7,12],[13,10,14,15]]))
-# print "Misplaced tile heuristic for initial state is {0}".format(heuristicValue([[1,3,6,4],[5,11,2,8],[0,9,7,12],[13,10,14,15]]))
+# print "MD for initial state is {0}".format(ManhattanDistance([[5,1,2,3],[13,9,6,4],[10,15,7,11],[14,0,12,8]]))
+# print "MD tile heuristic for initial state is {0}".format(heuristicValue([[5,1,2,3],[13,9,6,4],[10,0,7,11],[14,15,12,8]]))
+# start = time.time()
+# print "successor time is {0}".format(successor(initial_state))
+# end = time.time()
+# print "time is {0}".format(end - start)
+
+
+
+
+
