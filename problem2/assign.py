@@ -1,8 +1,9 @@
-# put your group assignment problem here!
-# !/usr/bin/env python3
+#!/usr/bin/env python
 
-#!/usr/bin/env python3
+# assign.py: Solve assignment of students problem
+# Ameya Angal, Angad Dhillon, Sagar Panchal
 
+# Analysis:
 # (1) A description of how you formulated the search problem, including precisely defining the state space, the successor function,
 # the edge weights, the goal state, and (if applicable) the heuristic function(s) you designed, including an argument 
 # for why they are admissible.
@@ -12,7 +13,7 @@
 # 1. State space:
 #       It consists of all the possible states starting from the initial state which is a blank list of groups that will be
 # used to generate the successor. The states generated from the initial state will not contain more than 3 students per group and
-# also the number of groups cannot be more than the number of distinct students.
+# also the number of groups won't be more than the number of distinct students.
 
 # 2. Successor Function:
 #       It generates new states from the current state by simply adding a new student in a list of groups i.e.
@@ -53,6 +54,8 @@
 # exponentially. Hence, to overcome this issue we designed another function using Steepest Descent algorithm which gives us very fast
 # output even for large input sizes. The only problem with steepest descent is that we do not know whether the end result given by the
 # algorithm is optimal or not.
+
+
 
 import sys
 import copy
