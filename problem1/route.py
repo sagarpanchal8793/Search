@@ -18,7 +18,7 @@
 #   cost function:
 #       a) Distance: Added previous travelled distance with the distance between two connected cities from road-segments.txt
 #       b) Time: Added previous time required with the distance between two connected cities, time = distance/speed (info given in road-segments.txt)
-#       c) Segments: Added 1 to previous travelled segments. Segment is when path is changed.
+#       c) Segments: Added 1 to previous travelled segments. Segment is when highway is changed.
 #   Heuristic: calculated distance between source city and goal city using latitude and longitude information in the city-gps
 #         Distance is calculated using Haversine formula. For the cites/junctions that don't have latitude and longitude, we have returned
 #         0, as with this case the total heuristic will be weak but will never overestimate. This heuristic is not consistent.
@@ -36,9 +36,9 @@
 #   San_Jose,_California Miami,_Florida bfs distance -Nodes expanded 6383
 #   San_Jose,_California Miami,_Florida dfs distance -Nodes expanded 3373 (Nodes expanded is less than UCS and BFS but output is not optimal)
 
-# 2) For me some instances of test data have same Astar and Uniform Cost Search running time. But for most of the cases(with relatively close start city and goal city) Astar takes less time as nodes expanded are very less
-#  than any other routing algorithm. As for longer routes time for computing heuristic increases, UCS and astar have comparable running time.
-#  We have a weak heuristic for cities/junctions having no known latitude and longitude, which cause more nodes to expand than ideal. So distances with
+# 2) For us, some instances of test data have same Astar and Uniform Cost Search running time. But for most of the cases(with relatively close start city and goal city) Astar takes less time as nodes expanded are very less
+#  than any other routing algorithm. As for longer routes, time for computing heuristic increases, UCS and astar have comparable running time.
+#  We have a weak heuristic for cities/junctions having no known latitude and longitude, which cause more nodes to expand than ideal. 
 #
 #  For example:
 #   San_Jose,_California Miami,_Florida dfs distance - time taken 0.577949047089 sec
@@ -52,7 +52,7 @@
 # 4) For Distance cost function, our heuristic gives the distance between current city and the goal city using latitude and longitude. But for
 # cities/junctions with unknown latitude and longitude, we assume heuristic as 0. In this way it will always underestimate the actual distance.
 # Our heuristic is not consistent, hence we have used search algorithm 2. After reading Piazza question @151, we have kept track of closed states
-# but when we encounter a state with lower f(s) than the visited earlier we remove the previous inserted state as there is a possiblity for shortest route.
+# but when we encounter a state with lower f(s) than earlier visited city, we remove the previous inserted state as there is a possiblity for shortest route.
 #  For time cost function: We have assumed that maximum speed is 150mph. We have divided heuristic value by 150 so as to calculate least possible
 # time required between current city and goal city (this way it doesn't overestimate)
 # For segments cost function: We have assumed that maximum seegments between source and destination are 1000. We have divided heuristic value by 1000 so as to calculate least possible
