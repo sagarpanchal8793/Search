@@ -273,7 +273,7 @@ def solve_astar(initial_state, cost):
 
 def printRoute(solution):
     if len(solution[1]) == 0:
-        print "{0} {1} {2} {3}".format(solution[2], solution[3], " ".join(start_city), goal_city)
+        print "{0} {1} {2} {3}".format(solution[2], solution[3], start_city, goal_city)
     else:
         for i in range(0, len(solution[1])-1):
             connectedhighway = ""
