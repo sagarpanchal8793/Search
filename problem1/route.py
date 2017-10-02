@@ -24,30 +24,44 @@
 #         0, as with this case the total heuristic will be weak but will never overestimate. This heuristic is not consistent.
 #   Successor: List of states for cities that are connected to the city whose successor needs to be found.
 #
-#   Assumption: 1) We have ignored the road-segments which has zero/blank distance
+#   Assumption: 1) We have ignored the road-segments which has zero/blank distance or zero/blank speed
+#               2) Assumed top speed as 150mph for calculating heuristic for time
+#               3) Assumed maximum segments between source city and destination city as 1000 for calculating heuristic for segments
 #
 #
 # 1) AStar search is working best for each routing options. As number of states expanded by Astar is always less than BFS, DFS and Uniform Cost
-#   for every case.
+#   for every case. Folowing are the some examples:
+#   San_Jose,_California Miami,_Florida uniform distance - Nodes expanded- 5847
+#   San_Jose,_California Miami,_Florida astar distance -Nodes expanded 2071
+#   San_Jose,_California Miami,_Florida bfs distance -Nodes expanded 6383
+#   San_Jose,_California Miami,_Florida dfs distance -Nodes expanded 3373 (Nodes expanded is less than UCS and BFS but output is not optimal)
 
+# 2) For me some instances of test data have same Astar and Uniform Cost Search running time. But for most of the cases(with relatively close start city and goal city) Astar takes less time as nodes expanded are very less
+#  than any other routing algorithm. As for longer routes time for computing heuristic increases, UCS and astar have comparable running time.
+#  We have a weak heuristic for cities/junctions having no known latitude and longitude, which cause more nodes to expand than ideal. So distances with
+#
+#  For example:
+#   San_Jose,_California Miami,_Florida dfs distance - time taken 0.577949047089 sec
+#   San_Jose,_California Miami,_Florida dfs distance - time taken 1.27012586594 sec
+#   San_Jose,_California Miami,_Florida uniform distance - time taken 1.73963713646 sec (time required is greater but path is optimal)
+#   San_Jose,_California Miami,_Florida astar distance  - time taken 1.76955795288 sec (time required equals time required for UCS as heuristic calculation is taking time)
 
+# 3) Memory requirement for astar is less than any other routing algorithm, as number of nodes expanded in astar is very less than any other
+# routing algorithm. Hence number of states for which the successor function runs is less and hence the running time and memory requirement is less.
 
+# 4) For Distance cost function, our heuristic gives the distance between current city and the goal city using latitude and longitude. But for
+# cities/junctions with unknown latitude and longitude, we assume heuristic as 0. In this way it will always underestimate the actual distance.
+# Our heuristic is not consistent, hence we have used search algorithm 2. After reading Piazza question @151, we have kept track of closed states
+# but when we encounter a state with lower f(s) than the visited earlier we remove the previous inserted state as there is a possiblity for shortest route.
+#  For time cost function: We have assumed that maximum speed is 150mph. We have divided heuristic value by 150 so as to calculate least possible
+# time required between current city and goal city (this way it doesn't overestimate)
+# For segments cost function: We have assumed that maximum seegments between source and destination are 1000. We have divided heuristic value by 1000 so as to calculate least possible
+# segments required between current city and goal city (this way it doesn't overestimate)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# 5) We have used Haversine formula to calculate distance between known latitude and longitude for 2 cities, which always gives the least path.
+# So this is admissible. For citites/junctions with unknown latitude and longitude we have heuristic value = 0, which always underestimates.
+# Our heuristic is not consistent. But after reading Piazza question @151, we have kept track of closed states and removed a state from closed when a
+# shorter route is found and hence we give opimal output.
 
 
 # put your routing program here
@@ -176,10 +190,12 @@ def AStarsuccessor(s, cost = " "):
 
 # solve using bfs algorithm
 def SolveBFS(initial_state, cost = ""):
+    statecount = 0
     fringe=[initial_state]
     while len(fringe)>0:
         popped_fringe=fringe.pop(0)
         if popped_fringe[0] not in visited_states:
+            statecount +=1
             visited_states.append(popped_fringe[0])
             for s in successor(popped_fringe):
                 if s[0] == goal_city:
@@ -190,9 +206,11 @@ def SolveBFS(initial_state, cost = ""):
 # solve using dfs algorithm
 def SolveDFS(initial_state, cost = ""):
     fringe=[initial_state]
+    statecount = 0
     while len(fringe)>0:
         popped_fringe=fringe.pop()
         if popped_fringe[0] not in visited_states:
+            statecount +=1
             visited_states.append(popped_fringe[0])
             for s in successor(popped_fringe):
                 if s[0] == goal_city:
@@ -203,7 +221,6 @@ def SolveDFS(initial_state, cost = ""):
 # solve using uniform cost search algorithm
 def UniformCostSearch(initial_state, cost):
     statecount = 0
-    # print "UCS"
     if initial_state[0] == goal_city:
         return initial_state
     fringe=[initial_state]
@@ -211,7 +228,6 @@ def UniformCostSearch(initial_state, cost):
         fringe = sorted(fringe, key=itemgetter(6)) # Sort on c(s)
         popped_fringe=fringe.pop(0)
         if popped_fringe[0] == goal_city:
-            # print statecount
             return(popped_fringe)
         if popped_fringe[0] not in visited_states:
             statecount += 1
@@ -237,7 +253,6 @@ def IsStateInClosed(state, closed):
 # solve using a star algorithm
 def solve_astar(initial_state, cost):
     statecount = 0
-    # print "Astar"
     if initial_state[0] == goal_city:
         return initial_state
     fringe = [initial_state]
@@ -246,7 +261,6 @@ def solve_astar(initial_state, cost):
         fringe = sorted(fringe, key=itemgetter(7)) # Sort on f(s)
         popped_fringe = fringe.pop(0)
         if popped_fringe[0] == goal_city:
-            # print statecount
             return popped_fringe
         # if popped in closed, continue else closed append and expand
         if not IsStateInClosed(popped_fringe, closed):
@@ -307,7 +321,6 @@ costfunction = sys.argv[4]
 
 if IsInputvalid():
     initial_state = [start_city, [], 0, 0, 0,[], 0, Heuristicvalue(start_city)]
-    start = time.time()
     if routing_algorithm == "bfs":
         solution = SolveBFS(initial_state)
     elif routing_algorithm == "uniform":
@@ -316,39 +329,6 @@ if IsInputvalid():
         solution = SolveDFS(initial_state)
     else:
         solution = solve_astar(initial_state, costfunction)
-    # print "segments {0}".format(solution[4])
     printRoute(solution)
 else:
     print "Invalid Input"
-
-
-# goal_city = 'Abbot_Village,_Maine'
-# goal_city = 'Dallas,_Texas'
-
-# goal_city = 'Los_Angeles,_California'
-# initial_state = ['Virginia_Colony,_California', [], 0, 0, 0,[], Heuristicvalue('Virginia_Colony,_California')]
-
-# solution = solve_astar(initial_state, "distance")
-
-# print("You have reached and path is: {0}".format(solution[1]) if solution else "Sorry, no solution is found :(")
-# print "solution length : {0}".format(len(solution[1]))
-# print "total distance : {0}".format(solution[2])
-# print "total time : {0}".format(solution[3])
-# # print "total segments : {0}".format(solution[4])
-# print "total highways : {0}".format(solution[4])
-# print "time taken : {0}".format(end-start)
-
-# start = time.time()
-# print "AStar"
-# solution1 = solve_astar(initial_state)
-# end = time.time()
-#
-# print("You have reached and path is: {0}".format(solution1[1]) if solution1 else "Sorry, no solution is found :(")
-# print "solution length : {0}".format(len(solution1[1]))
-# print "total distance : {0}".format(solution1[2])
-# print "total time : {0}".format(solution1[3])
-# print "total segments : {0}".format(solution1[4])
-# print "total highways : {0}".format(solution1[5])
-# print "time taken : {0}".format(end-start)
-
-# print "distnace {0}".format(Heuristicvalue('Lakes_District,_Washington'))
