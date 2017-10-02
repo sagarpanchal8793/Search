@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-# put your 15 puzzle solver here!
+# solver16.py - Solves 15 puzzle
+# Created by Angad Dhillon, Sagar Panchal, Ameya Angal
 #
 # Abstraction:
 # State: State is a List that contains following elements:
@@ -19,8 +20,8 @@
 # MD - manhattan distance
 # LC - linear conflict
 # MD needs to be divide by 3 as 3 tiles can change positions in one move. Linear conflict provides the minimum number of moves required
-# to solve the conflicts in row and columns for a particular board. We have referred linear conflict algorithm from paper
-# Generating Admissible Heuristics by Criticizing Solutions to Relaxed Models by Othar Hansson, Andrew Mayer, and MordechaiYung.
+# to solve the conflicts in row and columns for a particular board. We have referred linear conflict algorithm from paper-
+# "Generating Admissible Heuristics by Criticizing Solutions to Relaxed Models" by Othar Hansson, Andrew Mayer, and MordechaiYung.
 #  This heuristic function is Consistent and Admissible.
 #
 # Algorithm functioning:
@@ -34,18 +35,20 @@
 #         3. Else, create successors for state and append to Fringe
 #
 # Why heuristic is admissible?
-# 	Our heuristic always gives the minimum possible steps to reach a goal state. If we relax the constraints and consider independent
-#  tiles , MD gives least number of steps to reach goal state. But we can move 3 tiles in one move we are doing MD/3. We are adding this
-#  to linear conflicts. Linear conflict states that if there is a conflict in a particular row/column atlas 2 moves are required to
+#  Our heuristic always gives the minimum possible steps to reach a goal state. If we relax the constraints and consider independent
+#  tiles , MD gives least number of steps to reach goal state. Since in this problem we can move 3 tiles in one move, we are doing MD/3. We are adding this
+#  to linear conflicts. Linear conflict states that if there is a conflict in a particular row/column atleast 2 moves are required to
 #  resolve that conflict. In calculating the linear conflict we have considered maximum mutual conflict value in a row and column,
 #  which is at minimum required to reach the goal. So MD/3+ LC is admissible.
 #
 # Difficulties faced:
-# As I have implemented linear conflict algorithm for finding LC, and the algorithm itself is computation heavy (also stated in mentioned
+# 1)As I have implemented linear conflict algorithm for finding LC, and the algorithm itself is computation heavy (also stated in mentioned
 #  paper), running time increases. But this algorithm reduces the number of nodes expanded as it is more informed than manhattan distance.
 #  I have selected a trade off between number of states in fringe vs time. As computational time for heuristic is large,
-# I have checked whether a state is present in closed before creating successors.  This reduced my total running time considerably. Also
-#  I have skipped checking and replacing a state in Fringe as it was a computational heavy task.
+# 2)I have checked whether a state is present in closed before creating successors.  This reduced my total running time considerably as we didn't need to
+#compute successors and heuristic value for successors. Also
+#  I have skipped checking and replacing a state in Fringe as it was a computational heavy task, since we are removing state with least heuristic value 
+# this skip will not affect optimality.
 #
 # references:
 # 1)"Generating Admissible Heuristics by Criticizing Solutions to Relaxed Models" by Othar Hansson, Andrew Mayer, and MordechaiYung
