@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # assign.py: Solve assignment of students problem
 # Ameya Angal, Angad Dhillon, Sagar Panchal
